@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Staff Console — Momentum Tax</title>
+<style>
+  :root{
+    --navy:#0f2a47; --navy-2:#163a61; --teal:#1ea7a0; --teal-d:#157c77;
+    --gold:#c9a227; --ink:#1f2933; --muted:#6b7785; --line:#e3e8ee;
+    --bg:#f4f6f9; --card:#fff; --ok:#1e8e4e; --danger:#c0392b; --warn:#b7791f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink)}
+  header{background:var(--navy);color:#fff;padding:14px 24px;display:flex;
+         align-items:center;justify-content:space-between}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header .mark{color:var(--teal);font-weight:700}
+  header nav{display:flex;gap:6px}
+  .tab{background:transparent;border:0;color:#cfe0ee;padding:8px 14px;border-radius:8px;
+       cursor:pointer;font:inherit;font-size:14px}
+  .tab.active{background:var(--navy-2);color:#fff}
+  .wrap{max-width:1080px;margin:24px auto;padding:0 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;
+        margin-bottom:16px;box-shadow:0 1px 2px rgba(15,42,71,.04)}
+  h2{color:var(--navy);font-size:18px;margin:0 0 14px}
+  h3{color:var(--navy-2);font-size:14px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.4px}
+  .muted{color:var(--muted)}
+  label{display:block;font-size:13px;color:var(--navy-2);margin:10px 0 4px;font-weight:600}
+  input,select,textarea{font:inherit;padding:9px 11px;border:1px solid var(--line);
+        border-radius:8px;width:100%;max-width:420px;background:#fff}
+  button{font:inherit;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+  .btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{background:var(--teal-d)}
+  .btn-ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+  .btn-warn{background:#fff;color:var(--warn);border:1px solid #ecd9b0}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+  .col{flex:1;min-width:280px}
+  .client-result{padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin:6px 0;
+        cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .client-result:hover{border-color:var(--teal);background:#f8fbfb}
+  .selected-client{background:#eef5f4;border:1px solid var(--teal);border-radius:8px;
+        padding:10px 14px;margin:8px 0;display:flex;justify-content:space-between;align-items:center}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;
+        background:#eef2f8;color:var(--navy-2);margin-left:6px}
+  .badge.open{background:#fdf3e7;color:var(--warn)}
+  .badge.done{background:#e9f7ef;color:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  .notice{padding:9px 13px;border-radius:8px;font-size:14px;margin:8px 0}
+  .notice.ok{background:#e9f7ef;color:var(--ok)}
+  .notice.err{background:#fdecea;color:var(--danger)}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .hidden{display:none}
+  .empty{color:var(--muted);padding:24px 0;text-align:center}
+  .field-builder{border:1px dashed var(--line);border-radius:8px;padding:10px;margin:6px 0}
+  small.help{color:var(--muted);font-weight:400}
+</style>
+</head>
+<body>
+<header>
+  <h1>Momentum<span class="mark">Tax</span> · Staff Console</h1>
+  <nav>
+    <button class="tab active" data-v="share" onclick="tab('share')">Share & Request</button>
+    <button class="tab" data-v="forms" onclick="tab('forms')">Forms</button>
+    <button class="tab" data-v="queue" onclick="tab('queue')">Follow-ups</button>
+  </nav>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== SHARE & REQUEST ===== -->
+  <section id="v-share">
+    <div class="card">
+      <h2>Choose a client</h2>
+      <input id="clientSearch" placeholder="Search by name, business, or email…" oninput="searchClients()" />
+      <div id="clientResults"></div>
+      <div id="selectedClient"></div>
+    </div>
+
+    <div id="clientPanels" class="hidden">
+      <div class="row">
+        <div class="col card">
+          <h2>Share a document</h2>
+          <p class="muted" style="font-size:13px">Upload a file to send to this client. They'll see it in their portal.</p>
+          <input type="file" id="shareFile" />
+          <label>Category</label>
+          <select id="shareCategory">
+            <option>General</option><option>Tax Return</option><option>Financials</option>
+            <option>Signed Document</option><option>Invoice</option><option>ID / Verification</option>
+          </select>
+          <label>Link to XPM job number <small class="help">(optional)</small></label>
+          <input id="shareJob" placeholder="e.g. J001234" />
+          <label><input type="checkbox" id="shareNotify" checked style="width:auto;max-width:none"> Email the client</label>
+          <div style="margin-top:12px"><button class="btn-primary" onclick="shareDoc()">Upload & share</button></div>
+          <div id="shareStatus"></div>
+        </div>
+
+        <div class="col card">
+          <h2>Request a document</h2>
+          <p class="muted" style="font-size:13px">Ask the client to upload something specific.</p>
+          <label>What do you need?</label>
+          <input id="reqTitle" placeholder="e.g. 2025 motor vehicle logbook" />
+          <label>Details <small class="help">(optional)</small></label>
+          <textarea id="reqDesc" rows="2"></textarea>
+          <label>Due date <small class="help">(optional)</small></label>
+          <input id="reqDue" type="date" />
+          <label>Link to XPM job number <small class="help">(optional)</small></label>
+          <input id="reqJob" placeholder="e.g. J001234" />
+          <label><input type="checkbox" id="reqNotify" checked style="width:auto;max-width:none"> Email the client</label>
+          <div style="margin-top:12px"><button class="btn-primary" onclick="requestDoc()">Send request</button></div>
+          <div id="reqStatus"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>This client's documents & requests</h2>
+        <div id="clientDocs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FORMS ===== -->
+  <section id="v-forms" class="hidden">
+    <div class="row">
+      <div class="col card">
+        <h2>Send a form</h2>
+        <p class="muted" style="font-size:13px">Pick a client (in the Share & Request tab) then send them a template.</p>
+        <div id="formSendClient" class="muted">No client selected — choose one in “Share &amp; Request”.</div>
+        <label>Template</label>
+        <select id="formTemplate"></select>
+        <label>Due date <small class="help">(optional)</small></label>
+        <input id="formDue" type="date" />
+        <label>Link to XPM job number <small class="help">(optional)</small></label>
+        <input id="formJob" placeholder="e.g. J001234" />
+        <label><input type="checkbox" id="formNotify" checked style="width:auto;max-width:none"> Email the client</label>
+        <div style="margin-top:12px"><button class="btn-primary" onclick="sendForm()">Send form</button></div>
+        <div id="formSendStatus"></div>
+      </div>
+
+      <div class="col card">
+        <h2>Form templates</h2>
+        <div id="templateList"></div>
+        <h3>New template</h3>
+        <label>Code <small class="help">(unique, no spaces)</small></label>
+        <input id="tplCode" placeholder="e.g. rental_schedule" />
+        <label>Name</label>
+        <input id="tplName" placeholder="e.g. Rental Property Schedule" />
+        <label>Description</label>
+        <input id="tplDesc" />
+        <label>Fields</label>
+        <div id="fieldBuilder"></div>
+        <button class="btn-ghost" onclick="addField()" style="margin-top:6px">+ Add field</button>
+        <div style="margin-top:12px"><button class="btn-primary" onclick="createTemplate()">Create template</button></div>
+        <div id="tplStatus"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOLLOW-UPS ===== -->
+  <section id="v-queue" class="hidden">
+    <div class="card">
+      <h2>Outstanding forms</h2>
+      <div id="outForms"></div>
+    </div>
+    <div class="card">
+      <h2>Outstanding document requests</h2>
+      <div id="outDocs"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const ADMIN='/api/portal-admin';
+const $=s=>document.querySelector(s);
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function note(el,kind,msg){ $(el).innerHTML=`<div class="notice ${kind}">${msg}</div>`; }
+async function api(p,o){ return fetch(p, Object.assign({headers:{'Content-Type':'application/json'}},o)); }
+
+let CLIENT=null;
+
+function tab(v){
+  for(const s of ['share','forms','queue']) $('#v-'+s).classList.toggle('hidden', s!==v);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.v===v));
+  if(v==='forms'){ loadTemplates(); reflectFormClient(); }
+  if(v==='queue') loadQueue();
+}
+
+// ---- client search/select ----
+let searchTimer=null;
+function searchClients(){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(async()=>{
+    const q=$('#clientSearch').value.trim();
+    if(!q){ $('#clientResults').innerHTML=''; return; }
+    const { clients }=await (await api(`${ADMIN}/clients?q=${encodeURIComponent(q)}`)).json();
+    $('#clientResults').innerHTML = clients.length ? clients.map(c=>`
+      <div class="client-result" onclick='selectClient(${JSON.stringify(c)})'>
+        <div><b>${esc(c.business_name||c.full_name||c.email)}</b>
+          <div class="muted" style="font-size:12px">${esc(c.email)}${c.xpm_client_uuid?' · linked to XPM':''}</div></div>
+        <span class="btn-ghost" style="padding:4px 12px">Select</span>
+      </div>`).join('') : `<p class="empty">No matching clients.</p>`;
+  },250);
+}
+function selectClient(c){
+  CLIENT=c;
+  $('#clientResults').innerHTML=''; $('#clientSearch').value='';
+  $('#selectedClient').innerHTML=`<div class="selected-client">
+    <div><b>${esc(c.business_name||c.full_name||c.email)}</b>
+      <span class="muted" style="font-size:13px"> · ${esc(c.email)}</span></div>
+    <button class="btn-ghost" onclick="clearClient()">Change</button></div>`;
+  $('#clientPanels').classList.remove('hidden');
+  loadClientDocs();
+  reflectFormClient();
+}
+function clearClient(){ CLIENT=null; $('#selectedClient').innerHTML=''; $('#clientPanels').classList.add('hidden'); reflectFormClient(); }
+
+async function loadClientDocs(){
+  if(!CLIENT) return;
+  const { documents, requests }=await (await api(`${ADMIN}/clients/${CLIENT.id}/docs`)).json();
+  const docRows = documents.length ? `<table><tr><th>File</th><th>Direction</th><th>Category</th><th>When</th><th></th></tr>
+    ${documents.map(d=>`<tr><td>${esc(d.filename)}</td>
+      <td>${d.direction==='to_client'?'Sent to client':'From client'}</td>
+      <td>${esc(d.category||'')}</td>
+      <td>${new Date(d.created_at).toLocaleDateString('en-AU')}</td>
+      <td><button class="btn-ghost" style="padding:4px 10px" onclick="dl(${d.id})">Download</button></td></tr>`).join('')}</table>`
+    : `<p class="muted" style="font-size:13px">No documents yet.</p>`;
+  const reqRows = requests.length ? `<h3>Requests</h3><table><tr><th>Title</th><th>Status</th><th>Due</th></tr>
+    ${requests.map(r=>`<tr><td>${esc(r.title)}</td>
+      <td><span class="badge ${r.status==='open'?'open':'done'}">${r.status}</span></td>
+      <td>${r.due_date?new Date(r.due_date).toLocaleDateString('en-AU'):'—'}</td></tr>`).join('')}</table>` : '';
+  $('#clientDocs').innerHTML = docRows + reqRows;
+}
+async function dl(id){
+  const j=await (await api(`${ADMIN}/docs/${id}/download`)).json();
+  if(j.url) window.open(j.url,'_blank'); else alert('Could not generate link.');
+}
+
+// ---- share document ----
+async function shareDoc(){
+  if(!CLIENT) return note('#shareStatus','err','Select a client first.');
+  const f=$('#shareFile').files[0];
+  if(!f) return note('#shareStatus','err','Choose a file.');
+  note('#shareStatus','ok','Preparing secure upload…');
+  try{
+    const pre=await (await api(`${ADMIN}/docs/presign`,{method:'POST',body:JSON.stringify({
+      clientId:CLIENT.id,filename:f.name,contentType:f.type,sizeBytes:f.size})})).json();
+    if(pre.error) return note('#shareStatus','err',pre.error);
+    const put=await fetch(pre.uploadUrl,{method:'PUT',headers:{'Content-Type':f.type||'application/octet-stream'},body:f});
+    if(!put.ok) return note('#shareStatus','err','Upload failed.');
+    await api(`${ADMIN}/docs/confirm`,{method:'POST',body:JSON.stringify({
+      clientId:CLIENT.id,storageKey:pre.storageKey,filename:f.name,contentType:f.type,sizeBytes:f.size,
+      category:$('#shareCategory').value,xpmJobNumber:$('#shareJob').value||null,notify:$('#shareNotify').checked})});
+    $('#shareFile').value=''; note('#shareStatus','ok','✓ Shared with client.'); loadClientDocs();
+  }catch(e){ note('#shareStatus','err',e.message); }
+}
+
+// ---- request document ----
+async function requestDoc(){
+  if(!CLIENT) return note('#reqStatus','err','Select a client first.');
+  const title=$('#reqTitle').value.trim();
+  if(!title) return note('#reqStatus','err','Enter what you need.');
+  const r=await api(`${ADMIN}/doc-requests`,{method:'POST',body:JSON.stringify({
+    clientId:CLIENT.id,title,description:$('#reqDesc').value||null,dueDate:$('#reqDue').value||null,
+    xpmJobNumber:$('#reqJob').value||null,notify:$('#reqNotify').checked})});
+  if(r.ok){ $('#reqTitle').value='';$('#reqDesc').value=''; note('#reqStatus','ok','✓ Request sent.'); loadClientDocs(); }
+  else note('#reqStatus','err','Could not send request.');
+}
+
+// ---- forms ----
+function reflectFormClient(){
+  $('#formSendClient').innerHTML = CLIENT
+    ? `Sending to: <b>${esc(CLIENT.business_name||CLIENT.full_name||CLIENT.email)}</b>`
+    : 'No client selected — choose one in “Share &amp; Request”.';
+}
+async function loadTemplates(){
+  const { templates }=await (await api(`${ADMIN}/form-templates`)).json();
+  $('#formTemplate').innerHTML = templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  $('#templateList').innerHTML = templates.length ? templates.map(t=>`
+    <div style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <b>${esc(t.name)}</b> <span class="badge">${(t.fields||[]).length} fields</span>
+      <div class="muted" style="font-size:12px">${esc(t.description||'')}</div></div>`).join('')
+    : `<p class="muted" style="font-size:13px">No templates yet.</p>`;
+}
+async function sendForm(){
+  if(!CLIENT) return note('#formSendStatus','err','Select a client in “Share & Request” first.');
+  const templateId=$('#formTemplate').value;
+  if(!templateId) return note('#formSendStatus','err','No template selected.');
+  const r=await api(`${ADMIN}/forms/send`,{method:'POST',body:JSON.stringify({
+    clientId:CLIENT.id,templateId:Number(templateId),dueDate:$('#formDue').value||null,
+    xpmJobNumber:$('#formJob').value||null,notify:$('#formNotify').checked})});
+  if(r.ok) note('#formSendStatus','ok','✓ Form sent to client.');
+  else note('#formSendStatus','err','Could not send form.');
+}
+
+// ---- template builder ----
+let fields=[];
+function addField(){
+  fields.push({key:'',label:'',type:'text',required:false});
+  renderFields();
+}
+function renderFields(){
+  $('#fieldBuilder').innerHTML = fields.map((f,i)=>`
+    <div class="field-builder">
+      <input placeholder="Label (e.g. Annual rent received)" value="${esc(f.label)}" oninput="fields[${i}].label=this.value;autoKey(${i})">
+      <div class="pill-row" style="margin-top:6px">
+        <select onchange="fields[${i}].type=this.value" style="max-width:160px">
+          ${['text','number','boolean','select','textarea'].map(t=>`<option value="${t}"${f.type===t?' selected':''}>${t}</option>`).join('')}
+        </select>
+        <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400">
+          <input type="checkbox" style="width:auto" ${f.required?'checked':''} onchange="fields[${i}].required=this.checked"> required</label>
+        <button class="btn-ghost" style="padding:4px 10px" onclick="fields.splice(${i},1);renderFields()">remove</button>
+      </div>
+      ${f.type==='select'?`<input style="margin-top:6px" placeholder="Options, comma-separated" value="${esc((f.options||[]).join(', '))}" oninput="fields[${i}].options=this.value.split(',').map(s=>s.trim()).filter(Boolean)">`:''}
+    </div>`).join('');
+}
+function autoKey(i){ if(!fields[i].key) fields[i].key = fields[i].label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40); }
+async function createTemplate(){
+  const code=$('#tplCode').value.trim(), name=$('#tplName').value.trim();
+  if(!code||!name) return note('#tplStatus','err','Code and name are required.');
+  fields.forEach((f,i)=>autoKey(i));
+  const r=await api(`${ADMIN}/form-templates`,{method:'POST',body:JSON.stringify({
+    code,name,description:$('#tplDesc').value||null,fields})});
+  const j=await r.json();
+  if(j.ok){ note('#tplStatus','ok','✓ Template created.'); fields=[]; renderFields();
+    $('#tplCode').value='';$('#tplName').value='';$('#tplDesc').value=''; loadTemplates(); }
+  else note('#tplStatus','err',j.error||'Could not create template.');
+}
+
+// ---- follow-up queue ----
+async function loadQueue(){
+  const { forms, doc_requests }=await (await api(`${ADMIN}/outstanding`)).json();
+  $('#outForms').innerHTML = forms.length ? `<table>
+    <tr><th>Client</th><th>Form</th><th>Status</th><th>Due</th><th>Reminders</th><th></th></tr>
+    ${forms.map(f=>`<tr>
+      <td>${esc(f.business_name||f.full_name||f.email)}</td>
+      <td>${esc(f.title)}</td>
+      <td><span class="badge open">${f.status}</span></td>
+      <td>${f.due_date?new Date(f.due_date).toLocaleDateString('en-AU'):'—'}</td>
+      <td>${f.reminder_count||0}${f.last_reminder_at?` <span class="muted" style="font-size:11px">(${new Date(f.last_reminder_at).toLocaleDateString('en-AU')})</span>`:''}</td>
+      <td><button class="btn-warn" style="padding:5px 12px" onclick="remindForm(${f.id},this)">Send reminder</button></td>
+    </tr>`).join('')}</table>` : `<p class="empty">Nothing outstanding 🎉</p>`;
+
+  $('#outDocs').innerHTML = doc_requests.length ? `<table>
+    <tr><th>Client</th><th>Requested</th><th>Due</th><th></th></tr>
+    ${doc_requests.map(r=>`<tr>
+      <td>${esc(r.business_name||r.full_name||r.email)}</td>
+      <td>${esc(r.title)}</td>
+      <td>${r.due_date?new Date(r.due_date).toLocaleDateString('en-AU'):'—'}</td>
+      <td><button class="btn-warn" style="padding:5px 12px" onclick="remindDoc(${r.id},this)">Send reminder</button></td>
+    </tr>`).join('')}</table>` : `<p class="empty">No open document requests.</p>`;
+}
+async function remindForm(id,btn){ btn.disabled=true;btn.textContent='Sending…';
+  await api(`${ADMIN}/forms/${id}/remind`,{method:'POST'}); btn.textContent='✓ Sent'; setTimeout(loadQueue,800); }
+async function remindDoc(id,btn){ btn.disabled=true;btn.textContent='Sending…';
+  await api(`${ADMIN}/doc-requests/${id}/remind`,{method:'POST'}); btn.textContent='✓ Sent'; setTimeout(loadQueue,800); }
+
+// init
+renderFields();
+</script>
+</body>
+</html>
