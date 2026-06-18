@@ -74,9 +74,10 @@
   .menu-btn{display:none;background:none;border:0;cursor:pointer;padding:8px}
 
   /* ---- hero ---- */
-  .hero{position:relative;overflow:hidden;background:
-        radial-gradient(120% 120% at 100% 0%, #1d3c60 0%, var(--navy) 45%, var(--navy-d) 100%);
-        color:#fff}
+  .hero{position:relative;overflow:hidden;color:#fff;
+        background:
+          linear-gradient(100deg, rgba(11,24,40,.88) 0%, rgba(11,24,40,.70) 52%, rgba(15,34,54,.52) 100%),
+          url('./img/hero-melbourne.jpg') center 42%/cover no-repeat}
   .hero .wrap{padding-top:96px;padding-bottom:104px;position:relative;z-index:2}
   .hero .eyebrow{color:var(--steel-l)}
   .hero h1{color:#fff;font-size:clamp(40px,6.4vw,76px);font-weight:500;letter-spacing:-.015em;
@@ -198,12 +199,6 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-mark" aria-hidden="true">
-    <svg viewBox="0 0 100 100" fill="none">
-      <path d="M8 78 L50 30 L92 78" stroke="#fff" stroke-width="6"/>
-      <path d="M8 56 L34 56 L21 41 Z" fill="#fff"/>
-    </svg>
-  </div>
   <div class="wrap">
     <div class="eyebrow">Accounting &amp; Advisory · Essendon Fields, Melbourne</div>
     <h1>Grow your own opportunities</h1>
