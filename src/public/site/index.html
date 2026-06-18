@@ -53,9 +53,12 @@
   /* ---- arrow motif (the signature) ---- */
   .chev{display:inline-block;width:0;height:0;vertical-align:middle}
 
-  /* ---- header ---- */
+  /* ---- header (Headroom-style: hides on scroll down, shows on scroll up) ---- */
   header{position:sticky;top:0;z-index:50;background:var(--navy);
-         border-bottom:1px solid rgba(255,255,255,.08)}
+         border-bottom:1px solid rgba(255,255,255,.08);will-change:transform;
+         transition:transform .35s ease, box-shadow .3s ease}
+  header.nav-up{transform:translateY(-100%)}
+  header.nav-scrolled{box-shadow:0 8px 24px rgba(7,17,30,.30)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:78px}
   .brand{display:flex;align-items:center}
   .brand img{height:42px;width:auto;display:block}
@@ -175,7 +178,21 @@
     .hero-mark{display:none}
     .cta-band{padding:32px}
   }
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+  /* ---- scroll-reveal animations ---- */
+  .reveal{opacity:0;transform:translateY(24px);
+          transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  /* hero content rises in on load */
+  .hero .eyebrow,.hero h1,.hero p.lede,.hero .cta{opacity:0;transform:translateY(20px);
+          animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards}
+  .hero h1{animation-delay:.08s}.hero p.lede{animation-delay:.18s}.hero .cta{animation-delay:.28s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;scroll-behavior:auto}
+    .reveal{opacity:1;transform:none}
+    .hero .eyebrow,.hero h1,.hero p.lede,.hero .cta{opacity:1;transform:none;animation:none}
+  }
   :focus-visible{outline:2px solid var(--steel);outline-offset:2px}
 </style>
 </head>
@@ -360,11 +377,53 @@
 
 <script>
   document.getElementById('yr').textContent = new Date().getFullYear();
+
   // close mobile menu on link tap
   document.querySelectorAll('.navlinks a').forEach(a=>a.addEventListener('click',()=>{
     if(window.innerWidth<=860){ document.querySelector('.navlinks').style.display='none';
       document.querySelector('.menu-btn').style.display='block'; }
   }));
+
+  // ---- Headroom: hide header on scroll down, reveal on scroll up ----
+  (function(){
+    const header = document.querySelector('header');
+    let last = window.scrollY, ticking = false;
+    function update(){
+      const y = window.scrollY;
+      header.classList.toggle('nav-scrolled', y > 8);
+      if(y > last && y > 140){           // scrolling down, past the hero edge
+        header.classList.add('nav-up');
+      } else if(y < last - 4){           // scrolling up (small threshold to avoid jitter)
+        header.classList.remove('nav-up');
+      }
+      last = y; ticking = false;
+    }
+    window.addEventListener('scroll', ()=>{
+      if(!ticking){ requestAnimationFrame(update); ticking = true; }
+    }, {passive:true});
+  })();
+
+  // ---- Scroll-reveal: fade/slide sections in as they enter view ----
+  (function(){
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sels = ['.sec-head','.svc','.stat','.about-cols > div','.contact-card','.cta-band'];
+    const els = [];
+    sels.forEach(s=>document.querySelectorAll(s).forEach(el=>els.push(el)));
+    els.forEach(el=>el.classList.add('reveal'));
+    if(reduce || !('IntersectionObserver' in window)){ els.forEach(el=>el.classList.add('in')); return; }
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(!e.isIntersecting) return;
+        const el = e.target;
+        const sibs = [...el.parentElement.children].filter(c=>c.classList.contains('reveal'));
+        const i = sibs.indexOf(el);
+        if(i > 0) el.style.transitionDelay = Math.min(i,4)*0.08 + 's';   // stagger grids/rows
+        el.classList.add('in');
+        io.unobserve(el);
+      });
+    }, {threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+    els.forEach(el=>io.observe(el));
+  })();
 </script>
 </body>
 </html>
