@@ -10,6 +10,8 @@ const reviewQueue = require('./src/routes/reviewQueue');
 const portalRoutes = require('./src/portal/portalRoutes');
 const clientDocsRoutes = require('./src/portal/clientDocsRoutes');
 const staffDocsRoutes = require('./src/portal/staffDocsRoutes');
+const staffRoutes = require('./src/portal/staffRoutes');
+const { requireStaffAuth, requireStaffPage } = require('./src/portal/staffAuth');
 
 const app = express();
 
@@ -37,19 +39,26 @@ app.use('/site', express.static(path.join(__dirname, 'src/public/site')));
 // Client portal API + pages
 app.use('/portal', portalRoutes);
 app.use('/portal/api', clientDocsRoutes);              // documents + forms (client, auth-gated)
-app.use('/api/portal-admin', staffDocsRoutes);          // staff: share/request docs, send forms, reminders
 // Serve the portal SPA + its assets. Scoped so only intended files are exposed.
 app.get('/portal', (_req, res) =>
     res.sendFile(path.join(__dirname, 'src/public/portal.html')));
 app.get('/portal/', (_req, res) =>
     res.sendFile(path.join(__dirname, 'src/public/portal.html')));
 
-// Staff onboarding review UI
-app.get('/onboarding/review', (_req, res) =>
+// ---- Staff auth + admin (all behind staff magic-link login) ----
+app.use('/staff', staffRoutes);                         // /staff/api/login, /verify, /logout, /me
+app.use('/api/portal-admin', requireStaffAuth, staffDocsRoutes);  // share/request docs, send forms, reminders
+
+// Staff login page (public)
+app.get('/staff/login', (_req, res) =>
+    res.sendFile(path.join(__dirname, 'src/public/staff-login.html')));
+
+// Staff onboarding review UI — staff only
+app.get('/onboarding/review', requireStaffPage, (_req, res) =>
     res.sendFile(path.join(__dirname, 'src/public/review-queue.html')));
 
-// Staff console (documents, forms, follow-ups). Mount behind your staff auth in prod.
-app.get('/staff/console', (_req, res) =>
+// Staff console (documents, forms, follow-ups) — staff only
+app.get('/staff/console', requireStaffPage, (_req, res) =>
     res.sendFile(path.join(__dirname, 'src/public/staff-console.html')));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));

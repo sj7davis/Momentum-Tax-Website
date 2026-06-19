@@ -3,9 +3,11 @@ const router = express.Router();
 const db = require('../db/pool');
 const xpm = require('../services/xpm');
 const portalProvision = require('../portal/provision');
+const { requireStaffAuth } = require('../portal/staffAuth');
 
-// NOTE: protect these endpoints with your portal's existing auth middleware.
-// e.g. router.use(requireStaffAuth);
+// All review-queue + template-mapping endpoints are staff-only. The public Trafft
+// webhook lives in a separate router (trafftWebhook.js), so it is unaffected.
+router.use(requireStaffAuth);
 
 // ---- Service -> XPM template mapping --------------------------------------
 

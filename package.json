@@ -6,7 +6,7 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "start": "node server.js",
-    "migrate": "psql \"$DATABASE_URL\" -f src/db/schema.sql && psql \"$DATABASE_URL\" -f src/db/service-template-schema.sql && psql \"$DATABASE_URL\" -f src/portal/portal-schema.sql && psql \"$DATABASE_URL\" -f src/portal/docs-forms-schema.sql",
+    "migrate": "psql \"$DATABASE_URL\" -f src/db/schema.sql && psql \"$DATABASE_URL\" -f src/db/service-template-schema.sql && psql \"$DATABASE_URL\" -f src/portal/portal-schema.sql && psql \"$DATABASE_URL\" -f src/portal/docs-forms-schema.sql && psql \"$DATABASE_URL\" -f src/portal/staff-auth-schema.sql",
     "bootstrap-xpm": "node bootstrap-oauth.js"
   },
   "dependencies": {
